@@ -11,7 +11,7 @@ app.set('view engine', 'ejs');
 app.use(bodyParser.urlencoded({
   extended: true
 }));
-app.use(express.static("public"));
+app.use(express.static("public"))
 
 mongoose.connect("mongodb://localhost:27017/todolistDB", {
   useNewUrlParser: true,
@@ -36,18 +36,20 @@ const vacuum = new Item({
   name: "Vacuum floor"
 });
 
-// Item.insertMany([trash, dishes, vacuum], function(err) {
-//   if (err) {
-//     console.log(err);
-//   } else {
-//     console.log("Successfully added documents");
-//   }
-// });
+const defaultItems = [trash, dishes, vacuum]
 
 app.get("/", function(req, res) {
-  res.render("list", {
-    listTitle: "Today",
-    newListItems: "Nothing"
+
+  Item.find({}, function(err, items) {
+    if (items.length === 0) {
+      Item.insertMany(defaultItems, function(err) {
+        if (err) console.log(err);
+        else console.log("Successfully added documents");
+      });
+      res.redirect("/");
+    } else {
+      res.render("list", {listTitle: "Today", newListItems: items});
+    }
   });
 
 });
