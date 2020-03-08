@@ -24,19 +24,26 @@ const itemsSchema = {
 
 const Item = mongoose.model("Item", itemsSchema);
 
-const trash = new Item({
-  name: "Trash"
+const item1 = new Item({
+  name: "Welcome to your todo list!"
 });
 
-const dishes = new Item({
-  name: "Dishes"
+const item2 = new Item({
+  name: "Use the plus sign to add a new item"
 });
 
-const vacuum = new Item({
-  name: "Vacuum floor"
+const item3 = new Item({
+  name: "Click the checkbox to delete"
 });
 
-const defaultItems = [trash, dishes, vacuum]
+const defaultItems = [item1, item2, item3]
+
+const listSchema = {
+  name: String,
+  items: [itemsSchema]
+};
+
+const List = mongoose.model("List", listSchema);
 
 app.get("/", function(req, res) {
 
@@ -48,7 +55,34 @@ app.get("/", function(req, res) {
       });
       res.redirect("/");
     } else {
-      res.render("list", {listTitle: "Today", newListItems: items});
+      res.render("list", {
+        listTitle: "Today",
+        newListItems: items
+      });
+    }
+  });
+
+});
+
+app.get("/:customList", function(req, res) {
+  const customList = req.params.customList;
+
+  List.findOne({name: customList}, function(err, foundList) {
+    if (!err) {
+      if (!foundList) {
+        //create a new list
+        const list = new List({
+          name: customList,
+          items: defaultItems
+        });
+
+        list.save();
+
+        res.render("/" + customList);
+      } else {
+        //show an existing list
+        res.render("list", {listTitle: foundList.name, newListItems: foundList.items});
+      }
     }
   });
 
@@ -56,21 +90,23 @@ app.get("/", function(req, res) {
 
 app.post("/", function(req, res) {
 
-  const item = req.body.newItem;
+  const itemName = req.body.newItem;
+  const item = new Item({
+    name: itemName
+  });
+  item.save();
+  res.redirect("/");
 
-  if (req.body.list === "Work") {
-    workItems.push(item);
-    res.redirect("/work");
-  } else {
-    items.push(item);
-    res.redirect("/");
-  }
 });
 
-app.get("/work", function(req, res) {
-  res.render("list", {
-    listTitle: "Work List",
-    newListItems: workItems
+app.post("/delete", function(req, res) {
+  const checkedItemId = req.body.checkbox;
+  Item.findByIdAndDelete(checkedItemId, function(err) {
+    if (err) console.log(err);
+    else {
+      console.log("Successfully deleted " + checkedItemId);
+      res.redirect("/");
+    }
   });
 });
 
