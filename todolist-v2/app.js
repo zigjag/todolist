@@ -3,6 +3,7 @@
 const express = require("express");
 const bodyParser = require("body-parser");
 const mongoose = require("mongoose");
+const _ = require("lodash");
 
 const app = express();
 
@@ -65,9 +66,9 @@ app.get("/", function(req, res) {
 });
 
 app.get("/:customList", function(req, res) {
-  const customList = req.params.customList;
+  const customList = _.capitalize(req.params.customList);
 
-  List.findOne({name: customList}, function(err, foundList) {
+  List.findOne({name: customList}, function(err, foundList){
     if (!err) {
       if (!foundList) {
         //create a new list
@@ -75,9 +76,7 @@ app.get("/:customList", function(req, res) {
           name: customList,
           items: defaultItems
         });
-
         list.save();
-
         res.render("/" + customList);
       } else {
         //show an existing list
@@ -91,23 +90,45 @@ app.get("/:customList", function(req, res) {
 app.post("/", function(req, res) {
 
   const itemName = req.body.newItem;
+  const listName = req.body.list;
+
   const item = new Item({
     name: itemName
   });
-  item.save();
-  res.redirect("/");
 
+  if (listName === "Today") {
+    item.save();
+    res.redirect("/");
+  } else {
+    List.findOne({
+      name: listName
+    }, function(err, foundList) {
+      foundList.items.push(item);
+      foundList.save();
+      res.redirect("/" + listName);
+    });
+  }
 });
 
 app.post("/delete", function(req, res) {
   const checkedItemId = req.body.checkbox;
-  Item.findByIdAndDelete(checkedItemId, function(err) {
-    if (err) console.log(err);
-    else {
-      console.log("Successfully deleted " + checkedItemId);
-      res.redirect("/");
-    }
-  });
+  const listName = req.body.listName;
+
+  if(listName === "Today") {
+    Item.findByIdAndDelete(checkedItemId, function(err) {
+      if (err) console.log(err);
+      else {
+        console.log("Successfully deleted " + checkedItemId);
+        res.redirect("/");
+      }
+    });
+  } else {
+      List.findOneAndUpdate({name: listName}, {$pull: {items: {_id: checkedItemId}}}, function(err, foundList) {
+        if (!err) {
+          res.redirect("/" + listName);
+        }
+      });
+  }
 });
 
 app.get("/about", function(req, res) {
