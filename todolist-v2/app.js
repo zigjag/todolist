@@ -77,7 +77,7 @@ app.get("/:customList", function(req, res) {
           items: defaultItems
         });
         list.save();
-        res.render("/" + customList);
+        res.redirect("/" + customList);
       } else {
         //show an existing list
         res.render("list", {listTitle: foundList.name, newListItems: foundList.items});
