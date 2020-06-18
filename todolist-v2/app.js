@@ -1,18 +1,19 @@
 //jshint esversion:6
-
 const express = require("express");
 const bodyParser = require("body-parser");
 const mongoose = require("mongoose");
 const _ = require("lodash");
+const path = require("path");
 
 const app = express();
+const publicDir = path.join(__dirname, 'public/')
 
 app.set('view engine', 'ejs');
 
 app.use(bodyParser.urlencoded({
   extended: true
 }));
-app.use(express.static("public"))
+app.use(express.static(publicDir))
 
 mongoose.connect("mongodb+srv://jkligel:1618@cluster0-ax2hg.mongodb.net/todolistDB", {
   useNewUrlParser: true,
@@ -46,11 +47,11 @@ const listSchema = {
 
 const List = mongoose.model("List", listSchema);
 
-app.get("/", function(req, res) {
+app.get("/", (req, res) => {
 
-  Item.find({}, function(err, items) {
+  Item.find({}, (err, items) => {
     if (items.length === 0) {
-      Item.insertMany(defaultItems, function(err) {
+      Item.insertMany(defaultItems, (err) => {
         if (err) console.log(err);
         else console.log("Successfully added documents");
       });
